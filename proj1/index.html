@@ -1,7 +1,182 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 1 here
-	</body>
-</html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184 Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184: Computer Graphics and Imaging, Spring 2023</h1>
+<h1 align="middle">Project 1: Rasterizer</h1>
+<h2 align="middle">Miles Turin, CS184</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>In this project I implemented a variety of different rasterization and interpolation algorithms aimed at improving the fidelity of our rendering system. We explore different techniques involving geometry, linear algebra, and pre-computation.</p>
+
+<h2 align="middle">Section I: Rasterization</h2>
+
+<h3 align="middle">Part 1: Rasterizing single-color triangles</h3>
+
+<p>I decided to implement triangle rasterization using the rather naive method of checking all pixels in a bounding box. I iterate over the bounding box defined by the topmost, bottommost, leftmost, and rightmost points on the triangle. For each pixel inside the bounding box, I use the line equation to determine if it is outside, inside or on the line between each pair of points. Originally I had checked to see if the point was on the inside of all 3 lines. This works for many cases but I later determined that this does not work given certain orderings of points. I figured out that I instead needed to check if the three line equations yielded different signs. If there is both a positive and negative sign present, the point is not in the triangle.</p>
+
+<div align="middle">
+  <table style="width=100%">
+	  <img src="images/image1.png" align="middle" width="400px"/>
+	  <figcaption align="middle">Rasterization</figcaption>
+  </table>
+</div>
+
+<h3 align="middle">Part 2: Antialiasing triangles</h3>
+
+
+<p>To implement supersampling, I started off by changing how things work with the sample buffer. I made it so that the sample buffer has width * height * SPP Colors in it to make room for all of the samples. I also made sure that this value is maintained in various different functions that modify the buffers or the sample rate. Then, I create a new function, sample_pixel(), that works similarly to fill_pixel() except that it only fills out one sample. I changed resolve_to_framebuffer such that each pixel that is sent to the framebuffer is the average of all of the samples of that pixel in the sample buffer. Finally, in rasterize_triangle(), I added another loop so that each pixel in the bounding box checks multiple sample points and adds those to the sample buffer instead of filling the framebuffer outright. 
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/image2.png" align="middle" width="400px"/>
+        <figcaption align="middle">Grid supersampling, 1 SPP</figcaption>
+      </td>
+      <td>
+        <img src="images/image3.png" align="middle" width="400px"/>
+	<figcaption align="middle">Grid supersampling, 4 SPP</figcaption>
+      </td>
+      <td>
+        <img src="images/image4.png" align="middle" width="400px"/>
+        <figcaption align="middle">Grid supersampling, 16 SPP</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+
+For extra credit I added another method of sampling, random sampling (set via SampleParameter enum). My original plan was to seed the rand() function with the coordinates of each point in the texture (I tried several different ways of combining the x and y coordinate into one unsigned integer with bitwise and arithetic operations), so that random positions would be deterministic per-point. That really isn't how you're supposed to use srand and rand (they end up pretty much just acting as a hash function) and I kept getting strangely uniform patterns throughout the texture. I decided to just seed the random function once and use rand as a proof of concept. If you don't move the texture it stays static. The results of random supersampling are quite interesting: at 1 sample per pixel it looks awful, obscuring the triangles dramatically. However, even at only 4 samples per pixel it begins to have comporable performance to grid sampling, and at 16 samples per pixel it is quite convincing.</p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/image5.png" align="middle" width="400px"/>
+        <figcaption align="middle">Random supersampling, 1 SPP</figcaption>
+      </td>
+      <td>
+        <img src="images/image6.png" align="middle" width="400px"/>
+        <figcaption align="middle">Random supersampling, 16 SPP</figcaption>
+      </td>
+    </tr>
+    </table>
+</div>
+
+
+<h3 align="middle">Part 3: Transforms</h3>
+
+<div align="middle">
+  <table style="width=100%">
+        <img src="images/image7.png" align="middle" width="400px"/>
+        <figcaption align="middle">A dripped out vector man is frolicking.</figcaption>
+   </table>
+</div>
+
+<h2 align="middle">Section II: Sampling</h2>
+
+<h3 align="middle">Part 4: Barycentric coordinates</h3>
+
+<div align="middle">
+  <table style="width=100%">
+        <img src="images/triangle.png" align="middle" width="400px"/>
+   </table>
+</div>
+
+<p>In the barycentric coordinate system, points are represented as combinations of the points of the triangle they reside in. This is useful for a number of reasons. For example, we can use Barycentric coordinates to translate points in screen space to points in texture space. In the example image above you you can think of the colors red, green, and blue and representations of alpha, beta, and gamma (the coefficients of each point as represented in barycentric coordinates). As points in the triangle get further from the three points that define the triangle, they become more and more of a combination of the other points.
+<div align="middle">
+  <table style="width=100%">
+        <img src="images/image8.png" align="middle" width="400px"/>
+        <figcaption align="middle">basic/test7.svg</figcaption>
+   </table>
+</div>
+
+
+
+<h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+
+<p>Pixel Sampling is a method of coloring a pixel in screen space based off of pixels in texture space. In Nearest Pixel Sampling, we translate our coordinates from screen space into texture space, then round the translated coordinates to get the nearest pixel in the texture. This is necessary since screen space does not translate to texture space one-to-one. In Bilinear Pixel Sampling, we think of our translated point as inbetween the square of four nearest texture pixels. Similarly to barycentric coordinates, we calculate the translated point as a combination of those four nearby points, and use those coefficients to blend their colors together. To translate from screen space to texture space, I calculated the barycentric coordinates of the point inside the screen space triangle, then, using the coordinates of the texture space triangle the coefficeients we calcualted, found the texture space coorinates of our point. The rasterization strategy is the same as before, the bounding box. </p>
+
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/n1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Nearest sampling, 1 SPP</figcaption>
+      </td>
+      <td>
+        <img src="images/n16.png" align="middle" width="400px"/>
+        <figcaption align="middle">Nearest sampling, 16 SPP</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/b1.png" align="middle" width="400px"/>
+        <figcaption align="middle">Bilinear sampling, 1 SPP</figcaption>
+      </td>
+      <td>
+        <img src="images/b16.png" align="middle" width="400px"/>
+        <figcaption align="middle">Bilinear sampling, 16 SPP</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
+
+<p>While it is somewhat difficult to tell from the small screenshots, bilinear sampling makes a huge difference at 1 SPP. At 16 SPP bilinear sampling makes a less noticible but still positive difference. The cost of bilinear sampling is far lower than upping the sampling rate.</p>
+
+<h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+
+<p>Level sampling is a method of sampling from a particular mapmip level. In my implementation, we make all samples go through the tex.sample() function. In that function, sample_nearest or sample_bilinear is used (depending on the pixel sample method) with a mipmap level determined by the level sample method and get_level. get_level determines mipmap level from the formula given in lecture slides. In the case of bilinear level sampling, we interpolate between 2 pixel samples.</p>
+<p>One thing to note when looking at the below examples is that differences are FAR easier to spot when enabling and disabling the settings in the program, side by sides like this tend to look very similar to eachother.</p>
+<div align="middle">
+  <table style="width=100%">
+    <tr>
+      <td>
+        <img src="images/lzpn.png" align="middle" width="400px"/>
+        <figcaption align="middle">Zero level sampling, nearest pixel sampling</figcaption>
+      </td>
+      <td>
+        <img src="images/lzpl.png" align="middle" width="400px"/>
+        <figcaption align="middle">Zero level sampling, bilinear pixel sampling</figcaption>
+      </td>
+    </tr>
+    <br>
+    <tr>
+      <td>
+        <img src="images/lnpn.png" align="middle" width="400px"/>
+        <figcaption align="middle">Nearest level sampling, nearest pixel sampling</figcaption>
+      </td>
+      <td>
+        <img src="images/lnpl.png" align="middle" width="400px"/>
+        <figcaption align="middle">Nearest level sampling, bilinear pixel sampling</figcaption>
+      </td>
+    </tr>
+  </table>
+</div>
