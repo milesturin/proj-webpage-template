@@ -1,7 +1,157 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Project 3-2 here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>  
+    div.padded {  
+      padding-top: 0px;  
+      padding-right: 100px;  
+      padding-bottom: 0.25in;  
+      padding-left: 100px;  
+    }  
+  </style> 
+<title>Miles Turin  |  CS 184</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link rel="stylesheet" type="text/css" href="style.css" media="screen" />
+</head>
+<body>
+<br />
+<h1 align="middle">Assignment 3-2: Additional Features to PathTracer</h1>
+    <h2 align="middle">Your Name</h2>
+    <h2 align="middle">(Webpage URL)</h2>
+
+    <div class="padded">
+
+        
+        * NOTE: For this project, you will choose TWO out of the four given parts to complete. One of those parts must be Part 1 or Part 2. In other words, you can choose any combination of two parts except the pair (Part 3, Part 4).
+
+
+        <h3 align="middle">Part 1. Mirror and Glass Materials</h3>
+
+        <p><b>
+            Show a sequence of six images of scene `CBspheres.dae` rendered with `max_ray_depth` set to 0, 1, 2, 3, 4, 5, and 100. The other settings should be at least 64 samples per pixel and 4 samples per light. Make sure to include all screenshots.
+        </b></p>
+        <p>
+		<div align="middle">
+		  <table style="width:100%">
+			<tr align="center">
+			  <td>
+				<img src="images/m0.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 0</figcaption>
+			  </td>
+			  <td>
+				<img src="images/m1.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 1</figcaption>
+			  </td>
+			</tr>
+			<tr align="center">
+			  <td>
+				<img src="images/m2.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 2</figcaption>
+			  </td>
+			  <td>
+				<img src="images/m3.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 3</figcaption>
+			  </td>
+			</tr>
+			<tr align="center">
+			  <td>
+				<img src="images/m4.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 4</figcaption>
+			  </td>
+			  <td>
+				<img src="images/m5.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 5</figcaption>
+			  </td>
+			</tr>
+			<tr align="center">
+			  <td>
+				<img src="images/m100.png" align="middle" width="400px"/>
+				<figcaption>max_ray_depth 100</figcaption>
+			  </td>
+			</tr>
+		  </table>
+		</div>
+				</p>
+        <br>
+        <p><b>
+            Point out the new multibounce effects that appear in each image. 
+        </b></p>
+        <p>
+            At ray depth 0 we only get zero bounce illumination. At ray depth 1, we see the scene and the skylight reflecting off the mirror sphere, but we don’t get any light transport through the spheres and we get a noisy reflection through the glass sphere. This noise is due to the randomness used in the sample_f of the glass material. At ray depth 2, we get a lot of reflections off of the mirror ball, but still have unlit surfaces since they require an additional bounce. At this point we only have reflections coming off of the glass ball, making it look more like a dim mirror. At ray depth 3, we get correct reflections in the mirror ball on everything except the glass ball’s reflection. The glass ball looks correct at this point, with the correct distortion and caustic. At a ray depth of 4, we see the glass ball’s reflection in the mirror ball and get some extra light around the edges of the glass ball. At ray depth 5 there are not really any noticeable differences, save for slightly more light on the edges of the glass ball. At ray depth 100 we see that the glass ball now has a distinct highlight at its top.
+        </p>
+        <br>
+        <p><b>
+            Explain how these bounce numbers relate to the particular effects that appear. Make sure to include all screenshots.
+        </b></p>
+        <p>
+            At ray depth one we only get zero bounce illumination at first since rays are not allowed to bounce at all. At ray depth 1 we get the black spheres because they can only accumulate light from the light source in one bounce. At ray depth 2 we don’t get illumination of the reflection of the ceiling in the mirror ball since it would take 3 bounces to collect the indirect illumination. We only get the reflection aspect of the glass material because it would take another bounce to refract through the glass ball. At ray depth 3 the ceiling reflection is lit and the rays can refract through the glass ball. The reflection of the glass ball is just now getting the reflection effects but not the refraction effects. At ray depth 4 the reflection of the glass ball gets refraction and looks correct. Beyond ray depth 4, more indirect light hits the top of the sphere creating a highlight. 
+
+        </p>
+        <br>
+
+
+        <h3 align="middle">Part 2. Microfacet Material</h3>
+        <p><b>
+            Show a screenshot sequence of 4 images of scene `CBdragon_microfacet_au.dae` rendered with $\alpha$ set to 0.005, 0.05, 0.25 and 0.5. The other settings should be at least 128 samples per pixel and 1 samples per light. The number of bounces should be at least 5. Describe the differences between different images. Note that, to change the $\alpha$, just open the .dae file and search for `microfacet`.
+        </b></p>
+        <p>
+            <div align="middle">
+		  <table style="width:100%">
+			<tr align="center">
+			  <td>
+				<img src="images/a0.5.png" align="middle" width="400px"/>
+				<figcaption>alpha = 0.5</figcaption>
+			  </td>
+			  <td>
+				<img src="images/a0.25.png" align="middle" width="400px"/>
+				<figcaption>alpha = 0.25</figcaption>
+			  </td>
+			</tr>
+			<tr align="center">
+			  <td>
+				<img src="images/a0.05.png" align="middle" width="400px"/>
+				<figcaption>alpha = 0.05</figcaption>
+			  </td>
+			  <td>
+				<img src="images/a0.005.png" align="middle" width="400px"/>
+				<figcaption>alpha = 0.005</figcaption>
+			  </td>
+			</tr>
+		  </table>
+		</div>
+        </p>
+        <br>
+        <p><b>
+            Show two images of scene `CBbunny_microfacet_cu.dae` rendered using cosine hemisphere sampling (default) and your importance sampling. The sampling rate should be fixed at 64 samples per pixel and 1 samples per light. The number of bounces should be at least 5. Briefly discuss their difference.
+        </b></p>
+        <p>
+                        <div align="middle">
+		  <table style="width:100%">
+			<tr align="center">
+			  <td>
+				<img src="images/cos.png" align="middle" width="400px"/>
+				<figcaption>cosine hemisphere sampling</figcaption>
+			  </td>
+			  <td>
+				<img src="images/imp.png" align="middle" width="400px"/>
+				<figcaption>importance sampling</figcaption>
+			  </td>
+			</tr>
+		  </table>
+		</div>
+			We can see that our reflection is terribly noisy and unconvincing without importance sampling. The edges of the rabbit are solid black from lack of samples. 
+        </p>
+        <br>
+        <p><b>
+            Show at least one image with some other conductor material, replacing `eta` and `k`. Note that you should look up values for real data rather than modifying them arbitrarily. Tell us what kind of material your parameters correspond to. 
+        </b></p>
+        <p>
+            <img src="images/vga.png" align="middle" width="400px"/>
+				<figcaption>CBdragon_microfacet_au.dae with a Vanadium-gallium alloy instead of gold</figcaption>
+        </p>
+        <br>
+
+    </div>
+</body>
 </html>
+
